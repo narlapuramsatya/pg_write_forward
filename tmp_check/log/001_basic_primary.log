@@ -1,0 +1,274 @@
+2026-05-07 20:34:10.276 UTC postmaster[1151120] LOG:  starting PostgreSQL 19devel on x86_64-linux, compiled by gcc-13.3.0, 64-bit
+2026-05-07 20:34:10.276 UTC postmaster[1151120] LOG:  listening on Unix socket "/tmp/EbIbRhs87O/.s.PGSQL.25503"
+2026-05-07 20:34:10.278 UTC startup[1151125] LOG:  database system was shut down at 2026-05-07 20:34:10 UTC
+2026-05-07 20:34:10.280 UTC postmaster[1151120] LOG:  database system is ready to accept connections
+2026-05-07 20:34:10.378 UTC client backend[1151130] 001_basic.pl LOG:  statement: CREATE EXTENSION pg_write_forward
+2026-05-07 20:34:10.384 UTC client backend[1151132] 001_basic.pl LOG:  statement: CREATE TABLE t (id int primary key, val text);
+2026-05-07 20:34:10.386 UTC client backend[1151132] 001_basic.pl LOG:  statement: INSERT INTO t SELECT g, 'row-'||g FROM generate_series(1, 5) g;
+2026-05-07 20:34:10.389 UTC walsender[1151134] 001_basic.pl LOG:  received replication command: SHOW data_directory_mode
+2026-05-07 20:34:10.389 UTC walsender[1151134] 001_basic.pl STATEMENT:  SHOW data_directory_mode
+2026-05-07 20:34:10.390 UTC walsender[1151134] 001_basic.pl LOG:  received replication command: SHOW wal_segment_size
+2026-05-07 20:34:10.390 UTC walsender[1151134] 001_basic.pl STATEMENT:  SHOW wal_segment_size
+2026-05-07 20:34:10.390 UTC walsender[1151134] 001_basic.pl LOG:  received replication command: IDENTIFY_SYSTEM
+2026-05-07 20:34:10.390 UTC walsender[1151134] 001_basic.pl STATEMENT:  IDENTIFY_SYSTEM
+2026-05-07 20:34:10.390 UTC walsender[1151134] 001_basic.pl LOG:  received replication command: BASE_BACKUP ( LABEL 'pg_basebackup base backup',  PROGRESS,  CHECKPOINT 'fast',  WAIT 0,  MANIFEST 'yes',  TARGET 'client')
+2026-05-07 20:34:10.390 UTC walsender[1151134] 001_basic.pl STATEMENT:  BASE_BACKUP ( LABEL 'pg_basebackup base backup',  PROGRESS,  CHECKPOINT 'fast',  WAIT 0,  MANIFEST 'yes',  TARGET 'client')
+2026-05-07 20:34:10.394 UTC checkpointer[1151123] LOG:  checkpoint starting: fast force wait
+2026-05-07 20:34:10.398 UTC checkpointer[1151123] LOG:  checkpoint complete: fast force wait: wrote 31 buffers (24.2%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 1 recycled; write=0.001 s, sync=0.001 s, total=0.005 s; sync files=0, longest=0.000 s, average=0.000 s; distance=8729 kB, estimate=8729 kB; lsn=0/02000088, redo lsn=0/02000028
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl LOG:  received replication command: SHOW data_directory_mode
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl STATEMENT:  SHOW data_directory_mode
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl LOG:  received replication command: CREATE_REPLICATION_SLOT "pg_basebackup_1151135" TEMPORARY PHYSICAL ( RESERVE_WAL)
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl STATEMENT:  CREATE_REPLICATION_SLOT "pg_basebackup_1151135" TEMPORARY PHYSICAL ( RESERVE_WAL)
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl LOG:  released physical replication slot "pg_basebackup_1151135"
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl STATEMENT:  CREATE_REPLICATION_SLOT "pg_basebackup_1151135" TEMPORARY PHYSICAL ( RESERVE_WAL)
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl LOG:  received replication command: IDENTIFY_SYSTEM
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl STATEMENT:  IDENTIFY_SYSTEM
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl LOG:  received replication command: START_REPLICATION SLOT "pg_basebackup_1151135" 0/02000000 TIMELINE 1
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl STATEMENT:  START_REPLICATION SLOT "pg_basebackup_1151135" 0/02000000 TIMELINE 1
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl LOG:  acquired physical replication slot "pg_basebackup_1151135"
+2026-05-07 20:34:10.404 UTC walsender[1151135] 001_basic.pl STATEMENT:  START_REPLICATION SLOT "pg_basebackup_1151135" 0/02000000 TIMELINE 1
+2026-05-07 20:34:10.438 UTC walsender[1151135] 001_basic.pl LOG:  released physical replication slot "pg_basebackup_1151135"
+2026-05-07 20:34:10.438 UTC walsender[1151135] 001_basic.pl STATEMENT:  START_REPLICATION SLOT "pg_basebackup_1151135" 0/02000000 TIMELINE 1
+2026-05-07 20:34:10.506 UTC walsender[1151148] standby LOG:  received replication command: IDENTIFY_SYSTEM
+2026-05-07 20:34:10.506 UTC walsender[1151148] standby STATEMENT:  IDENTIFY_SYSTEM
+2026-05-07 20:34:10.506 UTC walsender[1151148] standby LOG:  received replication command: START_REPLICATION 0/03000000 TIMELINE 1
+2026-05-07 20:34:10.506 UTC walsender[1151148] standby STATEMENT:  START_REPLICATION 0/03000000 TIMELINE 1
+2026-05-07 20:34:10.600 UTC client backend[1151150] 001_basic.pl LOG:  statement: SELECT pg_is_in_recovery()
+2026-05-07 20:34:10.604 UTC client backend[1151152] 001_basic.pl LOG:  statement: SELECT pg_current_wal_lsn()
+2026-05-07 20:34:10.632 UTC client backend[1151161] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.632 UTC client backend[1151161] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.632 UTC client backend[1151161] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.632 UTC client backend[1151161] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.632 UTC client backend[1151161] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.632 UTC client backend[1151161] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.632 UTC client backend[1151161] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.632 UTC client backend[1151161] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.632 UTC client backend[1151161] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.632 UTC client backend[1151161] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.632 UTC client backend[1151161] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.632 UTC client backend[1151161] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (10, 'forwarded-10')
+2026-05-07 20:34:10.633 UTC client backend[1151161] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.641 UTC client backend[1151163] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id=10
+2026-05-07 20:34:10.653 UTC client backend[1151168] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.653 UTC client backend[1151168] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.653 UTC client backend[1151168] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.653 UTC client backend[1151168] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.653 UTC client backend[1151168] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.653 UTC client backend[1151168] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.653 UTC client backend[1151168] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.653 UTC client backend[1151168] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.653 UTC client backend[1151168] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.653 UTC client backend[1151168] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.653 UTC client backend[1151168] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.653 UTC client backend[1151168] 001_basic.pl LOG:  statement: UPDATE t SET val = 'updated' WHERE id = 10
+2026-05-07 20:34:10.654 UTC client backend[1151168] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.665 UTC client backend[1151173] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.665 UTC client backend[1151173] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.665 UTC client backend[1151173] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.665 UTC client backend[1151173] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.665 UTC client backend[1151173] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.666 UTC client backend[1151173] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.666 UTC client backend[1151173] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.666 UTC client backend[1151173] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.666 UTC client backend[1151173] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.666 UTC client backend[1151173] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.666 UTC client backend[1151173] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.666 UTC client backend[1151173] 001_basic.pl LOG:  statement: DELETE FROM t WHERE id = 10
+2026-05-07 20:34:10.666 UTC client backend[1151173] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.677 UTC client backend[1151178] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.678 UTC client backend[1151178] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.678 UTC client backend[1151178] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.678 UTC client backend[1151178] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (11, 'with-returning') RETURNING id, val
+2026-05-07 20:34:10.678 UTC client backend[1151178] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.685 UTC client backend[1151184] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.685 UTC client backend[1151184] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.685 UTC client backend[1151184] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.685 UTC client backend[1151184] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.685 UTC client backend[1151184] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.685 UTC client backend[1151184] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.685 UTC client backend[1151184] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.685 UTC client backend[1151184] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.685 UTC client backend[1151184] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.685 UTC client backend[1151184] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.685 UTC client backend[1151184] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.686 UTC client backend[1151184] 001_basic.pl LOG:  statement: SELECT id FROM t WHERE id = 11 FOR UPDATE
+2026-05-07 20:34:10.686 UTC client backend[1151184] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.692 UTC client backend[1151188] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.692 UTC client backend[1151188] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.692 UTC client backend[1151188] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.693 UTC client backend[1151188] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: PREPARE ins(int, text) AS INSERT INTO t VALUES ($1, $2);
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl LOG:  statement: EXECUTE ins(12, 'via-prepare');
+2026-05-07 20:34:10.693 UTC client backend[1151188] 001_basic.pl DETAIL:  prepare: PREPARE ins(int, text) AS INSERT INTO t VALUES ($1, $2);
+2026-05-07 20:34:10.694 UTC client backend[1151188] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.705 UTC client backend[1151203] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.705 UTC client backend[1151203] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.705 UTC client backend[1151203] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.705 UTC client backend[1151203] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.705 UTC client backend[1151203] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.705 UTC client backend[1151203] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.705 UTC client backend[1151203] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.705 UTC client backend[1151203] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.705 UTC client backend[1151203] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.705 UTC client backend[1151203] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.705 UTC client backend[1151203] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.705 UTC client backend[1151203] 001_basic.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF) INSERT INTO t VALUES (13, 'explain-row')
+2026-05-07 20:34:10.706 UTC client backend[1151203] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.717 UTC client backend[1151208] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.717 UTC client backend[1151208] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.717 UTC client backend[1151208] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.717 UTC client backend[1151208] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.717 UTC client backend[1151208] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.717 UTC client backend[1151208] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.717 UTC client backend[1151208] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: BEGIN ISOLATION LEVEL READ COMMITTED
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (30, 'in-xact-1');
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (31, 'in-xact-2');
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: COMMIT
+2026-05-07 20:34:10.718 UTC client backend[1151208] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.723 UTC client backend[1151210] 001_basic.pl LOG:  statement: SELECT pg_is_in_recovery()
+2026-05-07 20:34:10.727 UTC client backend[1151212] 001_basic.pl LOG:  statement: SELECT pg_current_wal_lsn()
+2026-05-07 20:34:10.736 UTC client backend[1151216] 001_basic.pl LOG:  statement: SELECT string_agg(val, ',' ORDER BY id) FROM t WHERE id IN (30,31)
+2026-05-07 20:34:10.747 UTC client backend[1151221] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.747 UTC client backend[1151221] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.747 UTC client backend[1151221] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.747 UTC client backend[1151221] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.747 UTC client backend[1151221] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.747 UTC client backend[1151221] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.748 UTC client backend[1151221] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.748 UTC client backend[1151221] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.748 UTC client backend[1151221] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.748 UTC client backend[1151221] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.748 UTC client backend[1151221] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.748 UTC client backend[1151221] 001_basic.pl LOG:  statement: BEGIN ISOLATION LEVEL READ COMMITTED
+2026-05-07 20:34:10.748 UTC client backend[1151221] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (40, 'rolled-back');
+2026-05-07 20:34:10.748 UTC client backend[1151221] 001_basic.pl LOG:  statement: ROLLBACK
+2026-05-07 20:34:10.752 UTC client backend[1151223] 001_basic.pl LOG:  statement: SELECT pg_is_in_recovery()
+2026-05-07 20:34:10.757 UTC client backend[1151225] 001_basic.pl LOG:  statement: SELECT pg_current_wal_lsn()
+2026-05-07 20:34:10.765 UTC client backend[1151229] 001_basic.pl LOG:  statement: SELECT count(*) FROM t WHERE id=40
+2026-05-07 20:34:10.772 UTC client backend[1151232] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.772 UTC client backend[1151232] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.772 UTC client backend[1151232] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.772 UTC client backend[1151232] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: BEGIN ISOLATION LEVEL READ COMMITTED
+2026-05-07 20:34:10.772 UTC client backend[1151232] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (41, 'inside-xact');
+2026-05-07 20:34:10.773 UTC client backend[1151232] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id = 41;
+2026-05-07 20:34:10.773 UTC client backend[1151232] 001_basic.pl LOG:  statement: COMMIT
+2026-05-07 20:34:10.773 UTC client backend[1151232] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.778 UTC client backend[1151234] 001_basic.pl LOG:  statement: CREATE SCHEMA s1;
+2026-05-07 20:34:10.778 UTC client backend[1151234] 001_basic.pl LOG:  statement: CREATE TABLE s1.u (id int);
+2026-05-07 20:34:10.783 UTC client backend[1151236] 001_basic.pl LOG:  statement: SELECT pg_is_in_recovery()
+2026-05-07 20:34:10.787 UTC client backend[1151238] 001_basic.pl LOG:  statement: SELECT pg_current_wal_lsn()
+2026-05-07 20:34:10.797 UTC client backend[1151243] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.797 UTC client backend[1151243] [unknown] LOG:  statement: SET search_path TO s1, public
+2026-05-07 20:34:10.797 UTC client backend[1151243] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.797 UTC client backend[1151243] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.797 UTC client backend[1151243] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.797 UTC client backend[1151243] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.797 UTC client backend[1151243] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.798 UTC client backend[1151243] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.798 UTC client backend[1151243] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.798 UTC client backend[1151243] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.798 UTC client backend[1151243] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.798 UTC client backend[1151243] 001_basic.pl LOG:  statement: SET search_path = s1, public;
+2026-05-07 20:34:10.798 UTC client backend[1151243] 001_basic.pl LOG:  statement: INSERT INTO u VALUES (100);
+2026-05-07 20:34:10.798 UTC client backend[1151243] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.802 UTC client backend[1151245] 001_basic.pl LOG:  statement: SELECT count(*) FROM s1.u WHERE id=100
+2026-05-07 20:34:10.809 UTC client backend[1151248] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.809 UTC client backend[1151248] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.809 UTC client backend[1151248] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.809 UTC client backend[1151248] [unknown] LOG:  statement: SET application_name = 'pwf-test'
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: SET application_name = 'pwf-test';
+2026-05-07 20:34:10.809 UTC client backend[1151248] pwf-test LOG:  statement: INSERT INTO t VALUES (200, 'app-name-test');
+2026-05-07 20:34:10.810 UTC client backend[1151248] pwf-test LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.814 UTC client backend[1151250] 001_basic.pl LOG:  statement: SELECT pg_is_in_recovery()
+2026-05-07 20:34:10.818 UTC client backend[1151252] 001_basic.pl LOG:  statement: SELECT pg_current_wal_lsn()
+2026-05-07 20:34:10.827 UTC client backend[1151256] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id=200
+2026-05-07 20:34:10.833 UTC client backend[1151259] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.833 UTC client backend[1151259] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.833 UTC client backend[1151259] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.833 UTC client backend[1151259] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.833 UTC client backend[1151259] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.833 UTC client backend[1151259] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.833 UTC client backend[1151259] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.833 UTC client backend[1151259] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.833 UTC client backend[1151259] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.833 UTC client backend[1151259] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.833 UTC client backend[1151259] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.833 UTC client backend[1151259] 001_basic.pl LOG:  statement: BEGIN ISOLATION LEVEL READ COMMITTED
+2026-05-07 20:34:10.834 UTC client backend[1151259] 001_basic.pl LOG:  statement: PREPARE ins2(int, text) AS INSERT INTO t VALUES ($1, $2);
+2026-05-07 20:34:10.834 UTC client backend[1151259] 001_basic.pl LOG:  statement: EXECUTE ins2(300, 'prep-1');
+2026-05-07 20:34:10.834 UTC client backend[1151259] 001_basic.pl DETAIL:  prepare: PREPARE ins2(int, text) AS INSERT INTO t VALUES ($1, $2);
+2026-05-07 20:34:10.834 UTC client backend[1151259] 001_basic.pl LOG:  statement: EXECUTE ins2(301, 'prep-2');
+2026-05-07 20:34:10.834 UTC client backend[1151259] 001_basic.pl DETAIL:  prepare: PREPARE ins2(int, text) AS INSERT INTO t VALUES ($1, $2);
+2026-05-07 20:34:10.834 UTC client backend[1151259] 001_basic.pl LOG:  statement: COMMIT
+2026-05-07 20:34:10.834 UTC client backend[1151259] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.838 UTC client backend[1151261] 001_basic.pl LOG:  statement: SELECT pg_is_in_recovery()
+2026-05-07 20:34:10.843 UTC client backend[1151263] 001_basic.pl LOG:  statement: SELECT pg_current_wal_lsn()
+2026-05-07 20:34:10.851 UTC client backend[1151267] 001_basic.pl LOG:  statement: SELECT count(*) FROM t WHERE id IN (300,301)
+2026-05-07 20:34:10.858 UTC client backend[1151270] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.858 UTC client backend[1151270] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.858 UTC client backend[1151270] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.858 UTC client backend[1151270] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.858 UTC client backend[1151270] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.858 UTC client backend[1151270] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.858 UTC client backend[1151270] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.858 UTC client backend[1151270] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.858 UTC client backend[1151270] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.858 UTC client backend[1151270] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.858 UTC client backend[1151270] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.858 UTC client backend[1151270] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (20, 'eventual-row');
+2026-05-07 20:34:10.859 UTC client backend[1151270] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.863 UTC client backend[1151272] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id=20
+2026-05-07 20:34:10.868 UTC client backend[1151274] 001_basic.pl LOG:  statement: SELECT pg_is_in_recovery()
+2026-05-07 20:34:10.872 UTC client backend[1151276] 001_basic.pl LOG:  statement: SELECT pg_current_wal_lsn()
+2026-05-07 20:34:10.882 UTC client backend[1151281] [unknown] LOG:  statement: SET default_transaction_read_only = off
+2026-05-07 20:34:10.883 UTC client backend[1151281] [unknown] LOG:  statement: SET search_path TO "$user", public
+2026-05-07 20:34:10.883 UTC client backend[1151281] [unknown] LOG:  statement: SET session_authorization = 'azureuser'
+2026-05-07 20:34:10.883 UTC client backend[1151281] [unknown] LOG:  statement: SET application_name = '001_basic.pl'
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: SET timezone = 'Etc/UTC'
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: SET datestyle = 'ISO, MDY'
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: SET intervalstyle = 'postgres'
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: SET extra_float_digits = '1'
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: SET statement_timeout = '0'
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: SET lock_timeout = '0'
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: SET idle_in_transaction_session_timeout = '0'
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (21, 'global-row');
+2026-05-07 20:34:10.883 UTC client backend[1151281] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.884 UTC client backend[1151281] 001_basic.pl LOG:  statement: SELECT pg_current_wal_insert_lsn()::text
+2026-05-07 20:34:10.905 UTC postmaster[1151120] LOG:  received immediate shutdown request
+2026-05-07 20:34:10.906 UTC postmaster[1151120] LOG:  database system is shut down

@@ -1,0 +1,73 @@
+2026-05-07 20:34:10.502 UTC postmaster[1151141] LOG:  starting PostgreSQL 19devel on x86_64-linux, compiled by gcc-13.3.0, 64-bit
+2026-05-07 20:34:10.502 UTC postmaster[1151141] LOG:  listening on Unix socket "/tmp/EbIbRhs87O/.s.PGSQL.25504"
+2026-05-07 20:34:10.504 UTC startup[1151146] LOG:  database system was interrupted; last known up at 2026-05-07 20:34:10 UTC
+2026-05-07 20:34:10.504 UTC startup[1151146] LOG:  starting backup recovery with redo LSN 0/02000028, checkpoint LSN 0/02000088, on timeline ID 1
+2026-05-07 20:34:10.504 UTC startup[1151146] LOG:  entering standby mode
+2026-05-07 20:34:10.504 UTC startup[1151146] LOG:  redo starts at 0/02000028
+2026-05-07 20:34:10.504 UTC startup[1151146] LOG:  completed backup recovery with redo LSN 0/02000028 and end LSN 0/02000130
+2026-05-07 20:34:10.504 UTC startup[1151146] LOG:  consistent recovery state reached at 0/02000130
+2026-05-07 20:34:10.504 UTC postmaster[1151141] LOG:  database system is ready to accept read-only connections
+2026-05-07 20:34:10.506 UTC walreceiver[1151147] LOG:  started streaming WAL from primary at 0/03000000 on timeline 1
+2026-05-07 20:34:10.614 UTC client backend[1151154] 001_basic.pl LOG:  statement: WAIT FOR LSN '0/03000000' WITH (MODE 'standby_replay', timeout '180s', no_throw);
+2026-05-07 20:34:10.618 UTC client backend[1151156] 001_basic.pl LOG:  statement: SELECT count(*) FROM pg_available_extensions WHERE name = 'pg_write_forward'
+2026-05-07 20:34:10.625 UTC client backend[1151158] 001_basic.pl LOG:  statement: SELECT pg_is_in_recovery()
+2026-05-07 20:34:10.630 UTC client backend[1151160] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (10, 'forwarded-10')
+2026-05-07 20:34:10.646 UTC client backend[1151165] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id=10
+2026-05-07 20:34:10.651 UTC client backend[1151167] 001_basic.pl LOG:  statement: UPDATE t SET val = 'updated' WHERE id = 10
+2026-05-07 20:34:10.658 UTC client backend[1151170] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id=10
+2026-05-07 20:34:10.663 UTC client backend[1151172] 001_basic.pl LOG:  statement: DELETE FROM t WHERE id = 10
+2026-05-07 20:34:10.671 UTC client backend[1151175] 001_basic.pl LOG:  statement: SELECT count(*) FROM t WHERE id=10
+2026-05-07 20:34:10.676 UTC client backend[1151177] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (11, 'with-returning') RETURNING id, val
+2026-05-07 20:34:10.683 UTC client backend[1151181] 001_basic.pl LOG:  statement: SELECT id FROM t WHERE id = 11 FOR UPDATE
+2026-05-07 20:34:10.691 UTC client backend[1151187] 001_basic.pl LOG:  statement: PREPARE ins(int, text) AS INSERT INTO t VALUES ($1, $2);
+2026-05-07 20:34:10.693 UTC client backend[1151187] 001_basic.pl LOG:  statement: EXECUTE ins(12, 'via-prepare');
+2026-05-07 20:34:10.698 UTC client backend[1151194] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id=12
+2026-05-07 20:34:10.703 UTC client backend[1151201] 001_basic.pl LOG:  statement: EXPLAIN (ANALYZE, COSTS OFF, TIMING OFF) INSERT INTO t VALUES (13, 'explain-row')
+2026-05-07 20:34:10.711 UTC client backend[1151205] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id=13
+2026-05-07 20:34:10.715 UTC client backend[1151207] 001_basic.pl LOG:  statement: BEGIN;
+2026-05-07 20:34:10.715 UTC client backend[1151207] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (30, 'in-xact-1');
+2026-05-07 20:34:10.718 UTC client backend[1151207] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (31, 'in-xact-2');
+2026-05-07 20:34:10.718 UTC client backend[1151207] 001_basic.pl LOG:  statement: COMMIT;
+2026-05-07 20:34:10.731 UTC client backend[1151214] 001_basic.pl LOG:  statement: WAIT FOR LSN '0/03000710' WITH (MODE 'standby_replay', timeout '180s', no_throw);
+2026-05-07 20:34:10.741 UTC client backend[1151218] 001_basic.pl LOG:  statement: SELECT count(*) FROM t WHERE id IN (30,31)
+2026-05-07 20:34:10.746 UTC client backend[1151220] 001_basic.pl LOG:  statement: BEGIN;
+2026-05-07 20:34:10.746 UTC client backend[1151220] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (40, 'rolled-back');
+2026-05-07 20:34:10.748 UTC client backend[1151220] 001_basic.pl LOG:  statement: ROLLBACK;
+2026-05-07 20:34:10.761 UTC client backend[1151227] 001_basic.pl LOG:  statement: WAIT FOR LSN '0/03000710' WITH (MODE 'standby_replay', timeout '180s', no_throw);
+2026-05-07 20:34:10.770 UTC client backend[1151231] 001_basic.pl LOG:  statement: BEGIN;
+2026-05-07 20:34:10.770 UTC client backend[1151231] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (41, 'inside-xact');
+2026-05-07 20:34:10.773 UTC client backend[1151231] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id = 41;
+2026-05-07 20:34:10.773 UTC client backend[1151231] 001_basic.pl LOG:  statement: COMMIT;
+2026-05-07 20:34:10.791 UTC client backend[1151240] 001_basic.pl LOG:  statement: WAIT FOR LSN '0/030214C8' WITH (MODE 'standby_replay', timeout '180s', no_throw);
+2026-05-07 20:34:10.796 UTC client backend[1151242] 001_basic.pl LOG:  statement: SET search_path = s1, public;
+2026-05-07 20:34:10.796 UTC client backend[1151242] 001_basic.pl LOG:  statement: INSERT INTO u VALUES (100);
+2026-05-07 20:34:10.807 UTC client backend[1151247] 001_basic.pl LOG:  statement: SET application_name = 'pwf-test';
+2026-05-07 20:34:10.807 UTC client backend[1151247] pwf-test LOG:  statement: INSERT INTO t VALUES (200, 'app-name-test');
+2026-05-07 20:34:10.822 UTC client backend[1151254] 001_basic.pl LOG:  statement: WAIT FOR LSN '0/030215E8' WITH (MODE 'standby_replay', timeout '180s', no_throw);
+2026-05-07 20:34:10.831 UTC client backend[1151258] 001_basic.pl LOG:  statement: BEGIN;
+2026-05-07 20:34:10.832 UTC client backend[1151258] 001_basic.pl LOG:  statement: PREPARE ins2(int, text) AS INSERT INTO t VALUES ($1, $2);
+2026-05-07 20:34:10.834 UTC client backend[1151258] 001_basic.pl LOG:  statement: EXECUTE ins2(300, 'prep-1');
+2026-05-07 20:34:10.834 UTC client backend[1151258] 001_basic.pl LOG:  statement: EXECUTE ins2(301, 'prep-2');
+2026-05-07 20:34:10.834 UTC client backend[1151258] 001_basic.pl LOG:  statement: COMMIT;
+2026-05-07 20:34:10.847 UTC client backend[1151265] 001_basic.pl LOG:  statement: WAIT FOR LSN '0/03021720' WITH (MODE 'standby_replay', timeout '180s', no_throw);
+2026-05-07 20:34:10.856 UTC client backend[1151269] 001_basic.pl LOG:  statement: SET pg_write_forward.consistency = 'eventual';
+2026-05-07 20:34:10.856 UTC client backend[1151269] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (20, 'eventual-row');
+2026-05-07 20:34:10.877 UTC client backend[1151278] 001_basic.pl LOG:  statement: WAIT FOR LSN '0/030217D0' WITH (MODE 'standby_replay', timeout '180s', no_throw);
+2026-05-07 20:34:10.881 UTC client backend[1151280] 001_basic.pl LOG:  statement: SET pg_write_forward.consistency = 'global';
+2026-05-07 20:34:10.881 UTC client backend[1151280] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (21, 'global-row');
+2026-05-07 20:34:10.888 UTC client backend[1151283] 001_basic.pl LOG:  statement: SELECT val FROM t WHERE id=21
+2026-05-07 20:34:10.893 UTC client backend[1151285] 001_basic.pl LOG:  statement: SELECT consistency, enabled, forwarded_count > 0 FROM pg_write_forward_status()
+2026-05-07 20:34:10.897 UTC client backend[1151287] 001_basic.pl LOG:  statement: SELECT count(*) FROM t
+2026-05-07 20:34:10.902 UTC client backend[1151289] 001_basic.pl LOG:  statement: SET pg_write_forward.consistency = 'off';
+2026-05-07 20:34:10.902 UTC client backend[1151289] 001_basic.pl LOG:  statement: INSERT INTO t VALUES (50, 'should-fail')
+2026-05-07 20:34:10.902 UTC client backend[1151289] 001_basic.pl ERROR:  cannot execute INSERT in a read-only transaction
+2026-05-07 20:34:10.902 UTC client backend[1151289] 001_basic.pl STATEMENT:  INSERT INTO t VALUES (50, 'should-fail')
+2026-05-07 20:34:10.905 UTC walreceiver[1151147] FATAL:  could not receive data from WAL stream: server closed the connection unexpectedly
+		This probably means the server terminated abnormally
+		before or while processing the request.
+2026-05-07 20:34:10.905 UTC startup[1151146] LOG:  invalid record length at 0/03021880: expected at least 24, got 0
+2026-05-07 20:34:10.907 UTC walreceiver[1151291] FATAL:  streaming replication receiver "standby" could not connect to the primary server: connection to server on socket "/tmp/EbIbRhs87O/.s.PGSQL.25503" failed: No such file or directory
+		Is the server running locally and accepting connections on that socket?
+2026-05-07 20:34:10.907 UTC startup[1151146] LOG:  waiting for WAL to become available at 0/03021898
+2026-05-07 20:34:11.036 UTC postmaster[1151141] LOG:  received immediate shutdown request
+2026-05-07 20:34:11.037 UTC postmaster[1151141] LOG:  database system is shut down

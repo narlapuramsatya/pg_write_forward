@@ -1,0 +1,5 @@
+# pg_write_forward extension
+comment = 'forward write statements from a hot standby to the primary'
+default_version = '1.0'
+module_pathname = '$libdir/pg_write_forward'
+relocatable = true
