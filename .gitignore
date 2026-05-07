@@ -17,3 +17,4 @@ regression.out
 *.swp
 *~
 .vscode/
+.deps/
