@@ -9,7 +9,9 @@
 
 MODULE_big = pg_write_forward
 EXTENSION  = pg_write_forward
-DATA       = sql/pg_write_forward--1.0.sql
+DATA       = sql/pg_write_forward--1.0.sql \
+             sql/pg_write_forward--1.1.sql \
+             sql/pg_write_forward--1.0--1.1.sql
 PGFILEDESC = "pg_write_forward - forward writes from a hot standby to the primary"
 
 OBJS = src/pg_write_forward.o $(WIN32RES)

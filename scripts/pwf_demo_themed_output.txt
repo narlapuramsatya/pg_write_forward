@@ -18,15 +18,15 @@ SELECT pg_is_in_recovery()                                  AS on_standby,
  t          | pg_write_forward | session
 (1 row)
 
-Time: 0.370 ms
+Time: 0.381 ms
 [36m ── current relay status ── [0m
 SELECT * FROM pg_write_forward_status();
-                                 primary_conninfo                                  | consistency | enabled | connected | forwarded_count | last_remote_lsn 
------------------------------------------------------------------------------------+-------------+---------+-----------+-----------------+-----------------
- host=/home/azureuser/pg/pwf_demo/sockets port=55501 dbname=postgres user=postgres | session     | t       | f         |               0 | 
+                                 primary_conninfo                                  | consistency | enabled | connected | forwarded_count | last_remote_lsn | forwarded_failures | cancellations | reconnects 
+-----------------------------------------------------------------------------------+-------------+---------+-----------+-----------------+-----------------+--------------------+---------------+------------
+ host=/home/azureuser/pg/pwf_demo/sockets port=55501 dbname=postgres user=postgres | session     | t       | f         |               0 |                 |                  0 |             0 |          0
 (1 row)
 
-Time: 0.192 ms
+Time: 0.208 ms
 
 [44;97m  SCENE 1  [0m [1m  Bootstrap schema on the primary (DDL is NOT forwarded)  [0m
 [2m    Why? DDL would need catalog locks the standby cannot replay. [0m
@@ -35,13 +35,13 @@ You are now connected to database "postgres" as user "postgres" via socket in "/
 [32m    ✓ connected to primary [0m
 DROP TABLE IF EXISTS pwf_demo;
 DROP TABLE
-Time: 3.483 ms
+Time: 3.574 ms
 CREATE TABLE pwf_demo (id serial PRIMARY KEY, payload text);
 CREATE TABLE
-Time: 8.253 ms
+Time: 9.207 ms
 INSERT INTO pwf_demo (payload) VALUES ('written-directly-on-primary');
 INSERT 0 1
-Time: 4.049 ms
+Time: 4.393 ms
 You are now connected to database "postgres" as user "postgres" via socket in "/home/azureuser/pg/pwf_demo/sockets" at port "55502".
 [33m    ↩ back on the standby [0m
 SELECT pg_sleep(0.3);
@@ -50,7 +50,7 @@ SELECT pg_sleep(0.3);
  
 (1 row)
 
-Time: 300.686 ms
+Time: 300.723 ms
                              Table "public.pwf_demo"
  Column  |  Type   | Collation | Nullable |               Default                
 ---------+---------+-----------+----------+--------------------------------------
@@ -64,19 +64,19 @@ Indexes:
 [2m    The standby is read-only by default; INSERT must fail. [0m
 SET pg_write_forward.enabled = off;
 SET
-Time: 0.077 ms
+Time: 0.076 ms
 INSERT INTO pwf_demo (payload) VALUES ('this should fail');
 psql:scripts/pwf_demo_themed.sql:71: ERROR:  cannot execute INSERT in a read-only transaction
-Time: 0.108 ms
+Time: 0.110 ms
 [31m    🚧 expected: cannot execute INSERT in a read-only transaction [0m
 
 [44;97m  SCENE 3  [0m [1m  Flip the relay ON and INSERT from the standby  [0m
 SET pg_write_forward.enabled = on;
 SET
-Time: 0.057 ms
+Time: 0.056 ms
 INSERT INTO pwf_demo (payload) VALUES ('hello-from-standby');
 INSERT 0 1
-Time: 7.726 ms
+Time: 5.924 ms
 [32m    📡 INSERT relayed primary→standby; row should now be visible: [0m
 SELECT count(*) AS rows_visible_on_standby FROM pwf_demo;
  rows_visible_on_standby 
@@ -84,15 +84,15 @@ SELECT count(*) AS rows_visible_on_standby FROM pwf_demo;
                        2
 (1 row)
 
-Time: 0.199 ms
+Time: 0.197 ms
 
 [44;97m  SCENE 4  [0m [1m  UPDATE, DELETE, MERGE — every write hops to the primary  [0m
 UPDATE pwf_demo SET payload = upper(payload) WHERE id = 1;
 UPDATE 1
-Time: 3.505 ms
+Time: 3.532 ms
 DELETE FROM pwf_demo WHERE payload LIKE '%-locked%';
 DELETE 0
-Time: 0.296 ms
+Time: 0.266 ms
 You are now connected to database "postgres" as user "postgres" via socket in "/home/azureuser/pg/pwf_demo/sockets" at port "55501".
 SELECT setval(pg_get_serial_sequence('pwf_demo','id'),
               GREATEST((SELECT max(id) FROM pwf_demo), 100));
@@ -101,17 +101,17 @@ SELECT setval(pg_get_serial_sequence('pwf_demo','id'),
     100
 (1 row)
 
-Time: 2.413 ms
+Time: 2.338 ms
 You are now connected to database "postgres" as user "postgres" via socket in "/home/azureuser/pg/pwf_demo/sockets" at port "55502".
 SET pg_write_forward.enabled = on;
 SET
-Time: 0.120 ms
+Time: 0.133 ms
 MERGE INTO pwf_demo d
 USING (VALUES ('merged-row-locked'), ('another-merged')) AS s(p)
    ON false
  WHEN NOT MATCHED THEN INSERT (payload) VALUES (s.p);
 MERGE 2
-Time: 7.938 ms
+Time: 5.994 ms
 SELECT id, payload FROM pwf_demo ORDER BY id;
  id  |           payload           
 -----+-----------------------------
@@ -121,61 +121,61 @@ SELECT id, payload FROM pwf_demo ORDER BY id;
  102 | another-merged
 (4 rows)
 
-Time: 0.323 ms
+Time: 0.394 ms
 
 [44;97m  SCENE 5  [0m [1m  SELECT … FOR UPDATE — lock taken on the primary  [0m
 BEGIN;
 BEGIN
-Time: 0.045 ms
+Time: 0.046 ms
 SELECT id, payload FROM pwf_demo WHERE id = 1 FOR UPDATE;
  id |           payload           
 ----+-----------------------------
   1 | WRITTEN-DIRECTLY-ON-PRIMARY
 (1 row)
 
-Time: 0.332 ms
+Time: 0.342 ms
 [35m    🔒 row locked on primary; lock released on COMMIT [0m
 COMMIT;
 COMMIT
-Time: 3.228 ms
+Time: 3.214 ms
 
 [44;97m  SCENE 6  [0m [1m  Prepared writes relay just like ad-hoc ones  [0m
 PREPARE ins (text) AS INSERT INTO pwf_demo (payload) VALUES ($1);
 PREPARE
-Time: 0.174 ms
+Time: 0.196 ms
 EXECUTE ins('via-prepared-1');
 EXECUTE
-Time: 3.978 ms
+Time: 3.029 ms
 EXECUTE ins('via-prepared-2');
 EXECUTE
-Time: 3.568 ms
+Time: 2.939 ms
 
 [44;97m  SCENE 7  [0m [1m  EXPLAIN ANALYZE INSERT — timings come from the primary  [0m
 EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
 INSERT INTO pwf_demo (payload) VALUES ('explained');
                                                 QUERY PLAN                                                
 ----------------------------------------------------------------------------------------------------------
- Insert on public.pwf_demo  (cost=0.00..0.01 rows=0 width=0) (actual time=0.012..0.012 rows=0.00 loops=1)
+ Insert on public.pwf_demo  (cost=0.00..0.01 rows=0 width=0) (actual time=0.010..0.010 rows=0.00 loops=1)
    Buffers: shared hit=3
    ->  Result  (cost=0.00..0.01 rows=1 width=36) (actual time=0.002..0.002 rows=1.00 loops=1)
          Output: nextval('pwf_demo_id_seq'::regclass), 'explained'::text
          Buffers: shared hit=1
- Planning Time: 0.009 ms
- Execution Time: 0.017 ms
+ Planning Time: 0.008 ms
+ Execution Time: 0.015 ms
 (7 rows)
 
-Time: 3.251 ms
+Time: 3.921 ms
 
 [44;97m  SCENE 8  [0m [1m  Multi-statement transaction sees its own writes  [0m
 BEGIN;
 BEGIN
-Time: 0.036 ms
+Time: 0.037 ms
 INSERT INTO pwf_demo (payload) VALUES ('xact-row-A');
 INSERT 0 1
-Time: 0.191 ms
+Time: 0.185 ms
 INSERT INTO pwf_demo (payload) VALUES ('xact-row-B');
 INSERT 0 1
-Time: 0.099 ms
+Time: 0.097 ms
 SELECT id, payload FROM pwf_demo
  WHERE payload LIKE 'xact-row-%' ORDER BY id;
  id  |  payload   
@@ -184,46 +184,46 @@ SELECT id, payload FROM pwf_demo
  107 | xact-row-B
 (2 rows)
 
-Time: 0.341 ms
+Time: 0.371 ms
 COMMIT;
 COMMIT
-Time: 3.095 ms
+Time: 3.025 ms
 
 [44;97m  SCENE 9  [0m [1m  search_path / application_name / TZ mirror to primary  [0m
 SET application_name = 'pwf-demo-mirrored';
 SET
-Time: 0.092 ms
+Time: 0.093 ms
 SET TIME ZONE 'Asia/Tokyo';
 SET
-Time: 0.306 ms
+Time: 0.312 ms
 INSERT INTO pwf_demo (payload)
 VALUES ('current_setting(application_name)='
         || current_setting('application_name'));
 INSERT 0 1
-Time: 3.320 ms
+Time: 3.227 ms
 RESET TIME ZONE;
 RESET
-Time: 0.081 ms
+Time: 0.084 ms
 
 [44;97m  SCENE 10  [0m [1m  GLOBAL: the standby waits for replay to catch up  [0m
 SET pg_write_forward.consistency = global;
 SET
-Time: 0.090 ms
+Time: 0.091 ms
 [36m    primary writes a row directly; standby must see it after replay [0m
 You are now connected to database "postgres" as user "postgres" via socket in "/home/azureuser/pg/pwf_demo/sockets" at port "55501".
 INSERT INTO pwf_demo (payload) VALUES ('written-directly-on-primary-2');
 INSERT 0 1
-Time: 1.971 ms
+Time: 1.900 ms
 You are now connected to database "postgres" as user "postgres" via socket in "/home/azureuser/pg/pwf_demo/sockets" at port "55502".
 SET pg_write_forward.consistency = global;
 SET
-Time: 0.123 ms
+Time: 0.114 ms
 SET pg_write_forward.enabled    = on;
 SET
-Time: 0.042 ms
+Time: 0.049 ms
 INSERT INTO pwf_demo (payload) VALUES ('global-mode-probe');
 INSERT 0 1
-Time: 5.631 ms
+Time: 5.583 ms
 SELECT count(*) FILTER (WHERE payload LIKE 'written-directly-on-primary%')
        AS sees_primary_writes
   FROM pwf_demo;
@@ -232,16 +232,16 @@ SELECT count(*) FILTER (WHERE payload LIKE 'written-directly-on-primary%')
                    1
 (1 row)
 
-Time: 0.430 ms
+Time: 0.380 ms
 
 [44;97m  SCENE 11  [0m [1m  Inspect the relay station  [0m
 SELECT * FROM pg_write_forward_status();
-                                 primary_conninfo                                  | consistency | enabled | connected | forwarded_count | last_remote_lsn 
------------------------------------------------------------------------------------+-------------+---------+-----------+-----------------+-----------------
- host=/home/azureuser/pg/pwf_demo/sockets port=55501 dbname=postgres user=postgres | global      | t       | t         |               1 | 0/03213F40
+                                 primary_conninfo                                  | consistency | enabled | connected | forwarded_count | last_remote_lsn | forwarded_failures | cancellations | reconnects 
+-----------------------------------------------------------------------------------+-------------+---------+-----------+-----------------+-----------------+--------------------+---------------+------------
+ host=/home/azureuser/pg/pwf_demo/sockets port=55501 dbname=postgres user=postgres | global      | t       | t         |               1 | 0/032695A8      |                  0 |             0 |          0
 (1 row)
 
-Time: 0.141 ms
+Time: 0.154 ms
 
 [44;97m  SCENE 12  [0m [1m  Drop the relay link and bring it back  [0m
 SELECT pg_write_forward_disconnect();
@@ -250,24 +250,24 @@ SELECT pg_write_forward_disconnect();
  
 (1 row)
 
-Time: 0.102 ms
+Time: 0.082 ms
 SELECT * FROM pg_write_forward_status();
-                                 primary_conninfo                                  | consistency | enabled | connected | forwarded_count | last_remote_lsn 
------------------------------------------------------------------------------------+-------------+---------+-----------+-----------------+-----------------
- host=/home/azureuser/pg/pwf_demo/sockets port=55501 dbname=postgres user=postgres | global      | t       | f         |               1 | 0/03213F40
+                                 primary_conninfo                                  | consistency | enabled | connected | forwarded_count | last_remote_lsn | forwarded_failures | cancellations | reconnects 
+-----------------------------------------------------------------------------------+-------------+---------+-----------+-----------------+-----------------+--------------------+---------------+------------
+ host=/home/azureuser/pg/pwf_demo/sockets port=55501 dbname=postgres user=postgres | global      | t       | f         |               1 | 0/032695A8      |                  0 |             0 |          0
 (1 row)
 
-Time: 0.064 ms
+Time: 0.066 ms
 INSERT INTO pwf_demo (payload) VALUES ('after-reconnect');
 INSERT 0 1
-Time: 5.289 ms
+Time: 5.500 ms
 SELECT * FROM pg_write_forward_status();
-                                 primary_conninfo                                  | consistency | enabled | connected | forwarded_count | last_remote_lsn 
------------------------------------------------------------------------------------+-------------+---------+-----------+-----------------+-----------------
- host=/home/azureuser/pg/pwf_demo/sockets port=55501 dbname=postgres user=postgres | global      | t       | t         |               2 | 0/03213FF8
+                                 primary_conninfo                                  | consistency | enabled | connected | forwarded_count | last_remote_lsn | forwarded_failures | cancellations | reconnects 
+-----------------------------------------------------------------------------------+-------------+---------+-----------+-----------------+-----------------+--------------------+---------------+------------
+ host=/home/azureuser/pg/pwf_demo/sockets port=55501 dbname=postgres user=postgres | global      | t       | t         |               2 | 0/03269660      |                  0 |             0 |          0
 (1 row)
 
-Time: 0.185 ms
+Time: 0.082 ms
 
 [42;30m  CURTAIN  [0m [1m  Every row below was written from the standby (or globally)  [0m
 SELECT id, payload FROM pwf_demo ORDER BY id;
@@ -288,7 +288,7 @@ SELECT id, payload FROM pwf_demo ORDER BY id;
  111 | after-reconnect
 (13 rows)
 
-Time: 0.261 ms
+Time: 0.243 ms
 
 [32m    ✅  demo complete — relay station signing off [0m
 [2m    tip: re-run with --no-pause for a fast replay, [0m

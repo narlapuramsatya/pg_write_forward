@@ -59,24 +59,46 @@ normally; they are forwarded to the primary and (with `consistency =
 session`) the session immediately sees its own writes on the standby.
 
 See [doc/INSTALL.md](doc/INSTALL.md) for the full install guide,
-[doc/USAGE.md](doc/USAGE.md) for a feature-by-feature cookbook, and
-[doc/DESIGN.md](doc/DESIGN.md) for the architecture and rationale.
+[doc/USAGE.md](doc/USAGE.md) for a feature-by-feature cookbook,
+[doc/DESIGN.md](doc/DESIGN.md) for the architecture and rationale,
+[doc/SECURITY.md](doc/SECURITY.md) for the threat model + hardening
+guidance, and [CHANGELOG.md](CHANGELOG.md) for release history.
+
+## Production hardening (since 1.1)
+
+- **Cancellable forwarding** — `Ctrl-C` on the standby propagates a
+  `PQcancel()` to the primary; no orphaned long-running queries.
+- **Reconnect-once** — broken primary connections are silently
+  re-established between statements (outside an open xact).
+- **Refused-by-default unsafe statements** — `SAVEPOINT`,
+  `PREPARE TRANSACTION`, `LISTEN`/`NOTIFY`, `COPY ... FROM`, and
+  `DECLARE ... FOR UPDATE` are hard-refused while forwarding is active.
+- **Credential redaction** — `primary_conninfo` is hidden in the status
+  view from non-superusers (members of `pg_monitor` see counters, not
+  credentials).
+- **Privileged disconnect** — `pg_write_forward_disconnect()` requires
+  superuser.
+- **Counters** — `forwarded_failures`, `cancellations`, `reconnects`
+  added to `pg_write_forward_status()`.
 
 ## Requirements
 
 - PostgreSQL 17 or newer (uses `xlogwait.h` API for LSN-replay waits).
 - libpq development headers (already provided by any PostgreSQL build).
-- Perl + `IPC::Run` for running the TAP test.
+- Perl + `IPC::Run` for running the TAP tests.
 
 ## Tests
 
 ```bash
-make PG_CONFIG=/path/to/pg_config check
+make PG_CONFIG=/path/to/pg_config install
+make PG_CONFIG=/path/to/pg_config installcheck
 ```
 
 Brings up a primary + streaming hot standby, configures the standby to
 forward, and exercises every supported statement class against all three
-non-`off` consistency modes.
+non-`off` consistency modes (`t/001_basic.pl`), plus the production
+hardening surface — refusal of unsafe statements, privilege checks,
+credential redaction, and counter behaviour (`t/002_hardening.pl`).
 
 ## License
 

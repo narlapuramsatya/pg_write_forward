@@ -77,6 +77,7 @@
 #include "libpq/pqformat.h"
 #include "miscadmin.h"
 #include "storage/ipc.h"
+#include "storage/latch.h"
 #include "nodes/nodes.h"
 #include "nodes/parsenodes.h"
 #include "nodes/plannodes.h"
@@ -120,6 +121,9 @@ static int	pwf_lsn_wait_timeout_ms = 60000;	/* 60s default */
 
 /* --- Statistics --- */
 static uint64 pwf_forwarded_count = 0;
+static uint64 pwf_forwarded_failures = 0;
+static uint64 pwf_cancellations = 0;
+static uint64 pwf_reconnects = 0;
 static XLogRecPtr pwf_last_remote_lsn = InvalidXLogRecPtr;
 
 /* --- Per-session state --- */
@@ -296,6 +300,115 @@ _PG_init(void)
 /* ---------------------------------------------------------------------
  * Connection management
  * --------------------------------------------------------------------- */
+
+/*
+ * wf_exec_cancellable
+ *	  Run `sql` on `conn` and return the (last) PGresult, while remaining
+ *	  responsive to query-cancel and SIGTERM on the local backend.
+ *
+ * If the user cancels the local query, we forward a libpq cancel to the
+ * primary, drain its result, then let CHECK_FOR_INTERRUPTS() throw the
+ * usual cancel error.
+ *
+ * On connection failure mid-query the function returns NULL (caller
+ * should free the conn and propagate the error or retry).
+ */
+static PGresult *
+wf_exec_cancellable(PGconn *conn, const char *sql)
+{
+	PGresult   *res = NULL;
+	PGresult   *next;
+	int			sock;
+	bool		cancel_sent = false;
+
+	if (!PQsendQuery(conn, sql))
+		return NULL;
+
+	sock = PQsocket(conn);
+	if (sock < 0)
+		return NULL;
+
+	for (;;)
+	{
+		int			wakeups;
+
+		/*
+		 * Wait briefly for socket-readable or latch.  We use a 1s timeout
+		 * as a belt-and-suspenders against any latch-set we might miss
+		 * (signals normally set the latch).
+		 */
+		wakeups = WaitLatchOrSocket(MyLatch,
+									WL_LATCH_SET | WL_SOCKET_READABLE |
+									WL_TIMEOUT | WL_EXIT_ON_PM_DEATH,
+									sock,
+									1000L,
+									PG_WAIT_EXTENSION);
+		ResetLatch(MyLatch);
+
+		if (wakeups & WL_SOCKET_READABLE)
+		{
+			if (!PQconsumeInput(conn))
+			{
+				/* connection broken */
+				return NULL;
+			}
+		}
+
+		/*
+		 * If the user has asked us to cancel (or we're being terminated),
+		 * forward a cancel to the primary once, then keep draining until
+		 * the server sends us back its "query canceled" result.
+		 */
+		if (!cancel_sent && (QueryCancelPending || ProcDiePending))
+		{
+			PGcancel   *c = PQgetCancel(conn);
+
+			if (c != NULL)
+			{
+				char		cebuf[256];
+
+				if (!PQcancel(c, cebuf, sizeof(cebuf)))
+				{
+					/* best-effort; log and move on */
+					ereport(LOG,
+							(errmsg("pg_write_forward: PQcancel failed: %s",
+									cebuf)));
+				}
+				PQfreeCancel(c);
+				pwf_cancellations++;
+			}
+			cancel_sent = true;
+		}
+
+		if (!PQisBusy(conn))
+			break;
+
+		/*
+		 * Don't call CHECK_FOR_INTERRUPTS() here yet: we want PQisBusy()
+		 * to flip false (i.e. server has answered) before we let the
+		 * cancel propagate.  Otherwise we'd leak a half-finished
+		 * conversation on the connection.
+		 */
+	}
+
+	/*
+	 * Server is no longer busy: collect the result(s).  PQgetResult()
+	 * returns one result per command; we keep the first non-empty one
+	 * and drain the rest.
+	 */
+	res = PQgetResult(conn);
+	while ((next = PQgetResult(conn)) != NULL)
+		PQclear(next);
+
+	/*
+	 * Now safely throw the local cancel/terminate, if any.  The result we
+	 * just collected may already be a PGRES_FATAL_ERROR caused by our
+	 * forwarded cancel, in which case caller will see *ok=false anyway.
+	 */
+	CHECK_FOR_INTERRUPTS();
+
+	return res;
+}
 
 static PGconn *
 wf_get_conn(void)
@@ -645,7 +758,7 @@ wf_begin_primary_xact(void)
 	if (XactDeferrable)
 		appendStringInfoString(&buf, " DEFERRABLE");
 
-	r = PQexec(conn, buf.data);
+	r = wf_exec_cancellable(conn, buf.data);
 	if (r == NULL || PQresultStatus(r) != PGRES_COMMAND_OK)
 	{
 		char	   *err = pstrdup(r ? PQresultErrorMessage(r)
@@ -772,12 +885,34 @@ wf_send_to_primary(const char *sql, bool capture_lsn,
 	if (out_lsn)
 		*out_lsn = InvalidXLogRecPtr;
 
-	res = PQexec(conn, sql);
+	/*
+	 * Send the user's SQL.  We use the cancellable wrapper so a local
+	 * Ctrl-C is forwarded to the primary instead of leaving an
+	 * orphaned long-running query there.
+	 */
+	res = wf_exec_cancellable(conn, sql);
 	if (res == NULL)
 	{
-		snprintf(errbuf, errbufsize, "no result from primary: %s",
-				 PQerrorMessage(conn));
-		return NULL;
+		/*
+		 * Connection died (or PQsendQuery failed).  Try once to
+		 * reconnect-and-resend, but only if we are NOT inside a primary
+		 * transaction block (where a reconnect would silently abort the
+		 * remote xact and lose isolation guarantees).
+		 */
+		snprintf(errbuf, errbufsize, "%s", PQerrorMessage(conn));
+		if (pwf_xact_state != WF_XACT_PRIMARY)
+		{
+			PQfinish(pwf_conn);
+			pwf_conn = NULL;
+			pwf_reconnects++;
+			conn = wf_get_conn();
+			res = wf_exec_cancellable(conn, sql);
+		}
+		if (res == NULL)
+		{
+			pwf_forwarded_failures++;
+			return NULL;
+		}
 	}
 
 	switch (PQresultStatus(res))
@@ -790,12 +925,13 @@ wf_send_to_primary(const char *sql, bool capture_lsn,
 			snprintf(errbuf, errbufsize, "%s",
 					 PQresultErrorMessage(res));
 			PQclear(res);
+			pwf_forwarded_failures++;
 			return NULL;
 	}
 
 	if (capture_lsn)
 	{
-		lsn_res = PQexec(conn, "SELECT pg_current_wal_insert_lsn()::text");
+		lsn_res = wf_exec_cancellable(conn, "SELECT pg_current_wal_insert_lsn()::text");
 		if (lsn_res != NULL && PQresultStatus(lsn_res) == PGRES_TUPLES_OK &&
 			PQntuples(lsn_res) == 1 && !PQgetisnull(lsn_res, 0, 0))
 		{
@@ -836,8 +972,8 @@ wf_wait_for_lsn(XLogRecPtr target)
 
 	if (pwf_consistency == WF_CONSISTENCY_GLOBAL)
 	{
-		PGresult   *r = PQexec(wf_get_conn(),
-							   "SELECT pg_current_wal_insert_lsn()::text");
+		PGresult   *r = wf_exec_cancellable(wf_get_conn(),
+											"SELECT pg_current_wal_insert_lsn()::text");
 
 		if (r && PQresultStatus(r) == PGRES_TUPLES_OK &&
 			PQntuples(r) == 1 && !PQgetisnull(r, 0, 0))
@@ -1298,6 +1434,84 @@ wf_ProcessUtility(PlannedStmt *pstmt, const char *queryString,
 	Node	   *parsetree = pstmt->utilityStmt;
 
 	/*
+	 * Refuse statements that we cannot safely forward when forwarding is
+	 * active.  The key invariant is that no committed write should ever
+	 * be invisible to the local transaction's view of "what I asked for":
+	 *
+	 *   - SAVEPOINT / RELEASE / ROLLBACK TO would split a primary-side
+	 *     transaction into sub-transactions that we don't mirror, so a
+	 *     ROLLBACK TO on the standby would silently keep the writes on
+	 *     the primary.  Refuse outright.
+	 *   - PREPARE TRANSACTION (2PC) cannot be tracked across two
+	 *     servers without a coordinator.
+	 *   - LISTEN / NOTIFY / UNLISTEN would set up channels on the
+	 *     primary that the standby session cannot consume.
+	 *   - COPY ... FROM would stream a potentially huge data volume
+	 *     through us; not supported in v1.x.  COPY ... TO is read-only
+	 *     and runs locally.
+	 */
+	if (parsetree != NULL && wf_should_handle())
+	{
+		switch (nodeTag(parsetree))
+		{
+			case T_TransactionStmt:
+				{
+					TransactionStmt *t = (TransactionStmt *) parsetree;
+
+					if (t->kind == TRANS_STMT_SAVEPOINT ||
+						t->kind == TRANS_STMT_RELEASE ||
+						t->kind == TRANS_STMT_ROLLBACK_TO)
+						ereport(ERROR,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("pg_write_forward does not support savepoints"),
+								 errhint("Disable forwarding (SET pg_write_forward.consistency=off) to use savepoints.")));
+					if (t->kind == TRANS_STMT_PREPARE)
+						ereport(ERROR,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("pg_write_forward does not support PREPARE TRANSACTION (two-phase commit)")));
+					break;
+				}
+			case T_ListenStmt:
+			case T_NotifyStmt:
+			case T_UnlistenStmt:
+				ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						 errmsg("pg_write_forward does not support LISTEN / NOTIFY")));
+				break;
+			case T_CopyStmt:
+				{
+					CopyStmt   *c = (CopyStmt *) parsetree;
+
+					if (c->is_from)
+						ereport(ERROR,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("pg_write_forward does not support COPY ... FROM"),
+								 errhint("Run COPY directly on the primary, or write a series of INSERTs.")));
+					break;
+				}
+			case T_DeclareCursorStmt:
+				/*
+				 * Cursors that contain row marks (FOR UPDATE) would need
+				 * to live on the primary; we don't track cursor state
+				 * across the wire.  Read-only cursors are fine and
+				 * execute locally.
+				 */
+				{
+					DeclareCursorStmt *d = (DeclareCursorStmt *) parsetree;
+					Query	   *q = (Query *) d->query;
+
+					if (q != NULL && q->rowMarks != NIL)
+						ereport(ERROR,
+								(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+								 errmsg("pg_write_forward does not support cursors with FOR UPDATE/SHARE")));
+					break;
+				}
+			default:
+				break;
+		}
+	}
+
+	/*
 	 * SET / RESET: always run locally first; on success, mirror to the
 	 * primary (now and on every future reconnect).  We deliberately do
 	 * NOT short-circuit local execution: the user expects local
@@ -1345,10 +1559,11 @@ Datum
 pg_write_forward_status(PG_FUNCTION_ARGS)
 {
 	TupleDesc	tupdesc;
-	Datum		values[6];
-	bool		nulls[6] = {false};
+	Datum		values[9];
+	bool		nulls[9] = {false};
 	HeapTuple	tuple;
 	const char *consistency_str;
+	const char *conninfo_disp;
 
 	if (get_call_result_type(fcinfo, NULL, &tupdesc) != TYPEFUNC_COMPOSITE)
 		elog(ERROR, "return type must be a row type");
@@ -1372,7 +1587,19 @@ pg_write_forward_status(PG_FUNCTION_ARGS)
 			consistency_str = "unknown";
 	}
 
-	values[0] = CStringGetTextDatum(pwf_primary_conninfo ? pwf_primary_conninfo : "");
+	/*
+	 * Scrub the conninfo before returning it: a non-superuser must not be
+	 * able to read out a password embedded in primary_conninfo via this
+	 * function.  Superusers see the full string.
+	 */
+	if (pwf_primary_conninfo == NULL || pwf_primary_conninfo[0] == '\0')
+		conninfo_disp = "";
+	else if (superuser())
+		conninfo_disp = pwf_primary_conninfo;
+	else
+		conninfo_disp = "<insufficient privilege>";
+
+	values[0] = CStringGetTextDatum(conninfo_disp);
 	values[1] = CStringGetTextDatum(consistency_str);
 	values[2] = BoolGetDatum(pwf_enabled);
 	values[3] = BoolGetDatum(pwf_conn != NULL && PQstatus(pwf_conn) == CONNECTION_OK);
@@ -1381,6 +1608,9 @@ pg_write_forward_status(PG_FUNCTION_ARGS)
 		nulls[5] = true;
 	else
 		values[5] = LSNGetDatum(pwf_last_remote_lsn);
+	values[6] = Int64GetDatum((int64) pwf_forwarded_failures);
+	values[7] = Int64GetDatum((int64) pwf_cancellations);
+	values[8] = Int64GetDatum((int64) pwf_reconnects);
 
 	tuple = heap_form_tuple(tupdesc, values, nulls);
 	PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
@@ -1389,6 +1619,18 @@ pg_write_forward_status(PG_FUNCTION_ARGS)
 Datum
 pg_write_forward_disconnect(PG_FUNCTION_ARGS)
 {
+	/*
+	 * Closing the primary connection is privileged: it could be used to
+	 * disrupt other backends sharing the same primary, and to force
+	 * password-bearing reconnect attempts that touch postgresql.conf
+	 * state.  Restrict to superusers; an admin can GRANT EXECUTE to a
+	 * specific role if they want to delegate.
+	 */
+	if (!superuser())
+		ereport(ERROR,
+				(errcode(ERRCODE_INSUFFICIENT_PRIVILEGE),
+				 errmsg("must be superuser to disconnect pg_write_forward")));
+
 	if (pwf_conn != NULL)
 	{
 		PQfinish(pwf_conn);

@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & TAP test (PG ${{ matrix.pg }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        pg: ['16', '17', '18']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+              build-essential pkg-config bison flex \
+              libreadline-dev zlib1g-dev libssl-dev libxml2-dev \
+              libxslt1-dev libldap2-dev uuid-dev libipc-run-perl
+
+      - name: Cache PostgreSQL build
+        id: pg-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/pgsrc/install
+          key: pg-${{ matrix.pg }}-${{ runner.os }}-v3
+
+      - name: Build PostgreSQL ${{ matrix.pg }}
+        if: steps.pg-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/pgsrc && cd ~/pgsrc
+          # Resolve the latest stable patch release for the requested major.
+          MAJOR=${{ matrix.pg }}
+          curl -sL "https://ftp.postgresql.org/pub/source/" \
+             | grep -oE "v${MAJOR}\.[0-9]+/" | sort -V | tail -1 \
+             | xargs -I{} echo "https://ftp.postgresql.org/pub/source/{}postgresql-${MAJOR}.${MAJOR}.tar.bz2" > /dev/null
+          # Simpler: just grab v<major>.<latest>; fallback to v<major>.0
+          for ver in $(seq 20 -1 0); do
+            url="https://ftp.postgresql.org/pub/source/v${MAJOR}.${ver}/postgresql-${MAJOR}.${ver}.tar.bz2"
+            if curl -sfI "$url" >/dev/null; then
+              echo "Downloading $url"
+              curl -sL "$url" | tar xj
+              cd "postgresql-${MAJOR}.${ver}"
+              break
+            fi
+          done
+          ./configure --prefix="$HOME/pgsrc/install" --without-icu --without-readline --without-zlib >/dev/null
+          make -j"$(nproc)" -s
+          make -C src/test/perl install >/dev/null
+          make install -s
+          # Build server-side test infra so contrib modules can run TAP tests
+          make -C src/test/regress install >/dev/null
+
+      - name: Build pg_write_forward
+        run: |
+          export PATH="$HOME/pgsrc/install/bin:$PATH"
+          make PG_CONFIG="$HOME/pgsrc/install/bin/pg_config" -j"$(nproc)"
+          make PG_CONFIG="$HOME/pgsrc/install/bin/pg_config" install
+
+      - name: Run TAP tests
+        run: |
+          export PATH="$HOME/pgsrc/install/bin:$PATH"
+          make PG_CONFIG="$HOME/pgsrc/install/bin/pg_config" installcheck
+
+      - name: Show TAP logs on failure
+        if: failure()
+        run: |
+          set -x
+          find tmp_check -name '*.log' -exec sh -c 'echo "===== $1 ====="; cat "$1"' _ {} \; | tail -300
+
+  lint:
+    name: Quick C lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Whitespace and tab checks
+        run: |
+          # Reject trailing whitespace
+          if grep -nP ' +$' src/*.c sql/*.sql; then
+              echo "::error::trailing whitespace found"; exit 1
+          fi
+          # Reject CRLF
+          if grep -lP '\r$' src/*.c sql/*.sql; then
+              echo "::error::CRLF line endings found"; exit 1
+          fi
